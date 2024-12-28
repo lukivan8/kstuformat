@@ -15,7 +15,7 @@ const Counter: React.FC<CounterProps> = ({ count }) => {
   }, [count]);
 
   return (
-    <Card className="shadow-lg p-4 w-fit mx-auto">
+    <Card className="shadow-lg p-4 max-w-96 mx-auto">
       <div className="flex flex-col items-center justify-center gap-4">
         <p className="text-sm text-gray-600 mt-1">Обработано файлов</p>
         <div className="flex gap-1">
