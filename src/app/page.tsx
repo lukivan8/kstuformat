@@ -14,20 +14,23 @@ import Instructions from "@/components/sections/Instructions";
 import FileUploadArea from "@/components/sections/FileUploadArea";
 import StatusMessages from "@/components/sections/StatusMessages";
 import Footer from "@/components/sections/Footer";
+import Counter from "@/components/sections/Counter";
+import { useCounter } from "@/hooks/useCounter";
 
-const SurveyProcessor: React.FC = () => {
+const SurveyProcessor = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const { increment, count } = useCounter();
 
   const handleFile = async (file: File) => {
     setIsProcessing(true);
     setError("");
     setSuccess("");
-
     try {
       await processFormData(file, setSuccess, setError);
+      increment();
     } catch (err) {
       setError("Произошла непредвиденная ошибка при обработке файла.");
     } finally {
@@ -42,7 +45,6 @@ const SurveyProcessor: React.FC = () => {
           title="Анализатор Опросов"
           subtitle="Преобразуйте ответы из Google Forms в удобный формат"
         />
-
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -56,18 +58,16 @@ const SurveyProcessor: React.FC = () => {
           </CardHeader>
           <CardContent className="space-y-6">
             <Instructions />
-
             <FileUploadArea
               isDragging={isDragging}
               isProcessing={isProcessing}
               setIsDragging={setIsDragging}
               onFileSelect={handleFile}
             />
-
             <StatusMessages error={error} success={success} />
           </CardContent>
         </Card>
-
+        <Counter count={count} />
         <Footer />
       </div>
     </div>
