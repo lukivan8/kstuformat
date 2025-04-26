@@ -35,9 +35,7 @@ const PreviewQuestion: React.FC<PreviewQuestionProps> = ({
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [dismissedGroups, setDismissedGroups] = useState<string[]>([]);
 
-  // Функция для создания уникального идентификатора группы
   const getGroupId = (group: typeof data.answers): string => {
-    // Создаем идентификатор на основе количества ответов и отсортированных текстов ответов
     const count = group[0].count;
     const texts = group
       .map((a) => a.text)
@@ -46,7 +44,6 @@ const PreviewQuestion: React.FC<PreviewQuestionProps> = ({
     return `${count}-${texts}`;
   };
 
-  // Группировка ответов по количеству для выделения потенциальных проблемных ответов
   const answersByCount = data.answers.reduce((acc, answer) => {
     if (!acc[answer.count]) {
       acc[answer.count] = [];
@@ -55,35 +52,29 @@ const PreviewQuestion: React.FC<PreviewQuestionProps> = ({
     return acc;
   }, {} as Record<number, typeof data.answers>);
 
-  // Определяем потенциально проблемные ответы и сортируем группы в соответствии с порядком в списке
   const allPotentialIssueGroups = Object.entries(answersByCount)
     .filter(([count, group]) => group.length > 1 && parseInt(count) > 0)
     .map(([count, group]) => ({
       count: parseInt(count),
       answers: group,
       id: getGroupId(group),
-      // Находим минимальный индекс элемента группы в исходном массиве
       firstIndex: Math.min(
         ...group.map((a) =>
           data.answers.findIndex((ans) => ans.text === a.text)
         )
       ),
     }))
-    // Сортируем группы по первому появлению варианта в исходном списке
     .sort((a, b) => a.firstIndex - b.firstIndex);
 
-  // Фильтруем игнорируемые группы
   const potentialIssueGroups = allPotentialIssueGroups
     .filter((group) => !dismissedGroups.includes(group.id))
     .map((group) => group.answers);
 
-  // Начать редактирование ответа
   const startEditing = (answerIndex: number) => {
     setEditingAnswerIndex(answerIndex);
     setEditValue(data.answers[answerIndex].text);
   };
 
-  // Сохранение отредактированного ответа
   const saveEdit = () => {
     if (editingAnswerIndex === null) return;
 
