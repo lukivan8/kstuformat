@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useState } from "react";
 import {
   Card,
@@ -8,13 +9,14 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { FileSpreadsheet } from "lucide-react";
-import processFormData from "@/processFile";
+import { processFormDataPreview, PreviewData } from "@/processFile";
 import Header from "@/components/sections/Header";
 import Instructions from "@/components/sections/Instructions";
 import FileUploadArea from "@/components/sections/FileUploadArea";
 import StatusMessages from "@/components/sections/StatusMessages";
 import Footer from "@/components/sections/Footer";
 import Counter from "@/components/sections/Counter";
+import SurveyPreview from "@/components/preview/SurveyPreview";
 import { useCounter } from "@/hooks/useCounter";
 
 const SurveyProcessor = () => {
@@ -22,20 +24,35 @@ const SurveyProcessor = () => {
   const [success, setSuccess] = useState("");
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [previewData, setPreviewData] = useState<PreviewData | null>(null);
   const { increment, count } = useCounter();
 
   const handleFile = async (file: File) => {
     setIsProcessing(true);
     setError("");
     setSuccess("");
+
     try {
-      await processFormData(file, setSuccess, setError);
-      increment();
+      const preview = await processFormDataPreview(file);
+      setPreviewData(preview);
     } catch (err) {
-      setError("Произошла непредвиденная ошибка при обработке файла.");
+      setError(
+        "Произошла непредвиденная ошибка при обработке файла: " +
+          (err as Error).message
+      );
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handlePreviewComplete = (message: string) => {
+    setPreviewData(null);
+    setSuccess(message);
+    increment();
+  };
+
+  const handleBack = () => {
+    setPreviewData(null);
   };
 
   return (
@@ -45,28 +62,52 @@ const SurveyProcessor = () => {
           title="Анализатор Опросов"
           subtitle="Преобразуйте ответы из Google Forms в удобный формат"
         />
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileSpreadsheet className="h-6 w-6" />
-              Загрузите Данные Опроса
-            </CardTitle>
-            <CardDescription>
-              Загрузите файл Excel с ответами из Google Forms для создания
-              сводного отчета с распределением ответов и процентами.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <Instructions />
-            <FileUploadArea
-              isDragging={isDragging}
-              isProcessing={isProcessing}
-              setIsDragging={setIsDragging}
-              onFileSelect={handleFile}
-            />
-            <StatusMessages error={error} success={success} />
-          </CardContent>
-        </Card>
+
+        {previewData ? (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileSpreadsheet className="h-6 w-6" />
+                Проверка и редактирование вариантов ответов
+              </CardTitle>
+              <CardDescription>
+                Исправьте автоматически определенные варианты и добавьте
+                отсутствующие перед получением отформатированного файла.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SurveyPreview
+                previewData={previewData}
+                onBack={handleBack}
+                onComplete={handlePreviewComplete}
+              />
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileSpreadsheet className="h-6 w-6" />
+                Загрузите Данные Опроса
+              </CardTitle>
+              <CardDescription>
+                Загрузите файл Excel с ответами из Google Forms для создания
+                сводного отчета с распределением ответов и процентами.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <Instructions />
+              <FileUploadArea
+                isDragging={isDragging}
+                isProcessing={isProcessing}
+                setIsDragging={setIsDragging}
+                onFileSelect={handleFile}
+              />
+              <StatusMessages error={error} success={success} />
+            </CardContent>
+          </Card>
+        )}
+
         <Counter count={count} />
         <Footer />
       </div>
