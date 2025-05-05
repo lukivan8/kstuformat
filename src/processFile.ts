@@ -19,15 +19,30 @@ interface AnswerRow {
   C: string; // Процент ответа
 }
 
+export interface PreviewAnswer {
+  text: string;
+  count: number;
+  percentage: string;
+}
+
 export interface PreviewQuestion {
   question: string;
-  answers: {
-    text: string;
-    count: number;
-    percentage: string;
-  }[];
+  answers: PreviewAnswer[];
   totalRespondents: number;
+  language?: "russian" | "kazakh" | "unknown";
+  combinedWith?: {
+    questionIndex: number;
+    questionText: string;
+  }[];
 }
+
+export type Language = "russian" | "kazakh" | "unknown";
+
+export type QuestionWithLanguage = PreviewQuestion & {
+  language?: Language;
+  originalAnswers?: PreviewAnswer[];
+  combinedWith?: { questionIndex: number; questionText: string }[];
+};
 
 export interface PreviewData {
   questions: PreviewQuestion[];
@@ -221,13 +236,38 @@ export const processFormDataPreview = async (
   };
 };
 
+export const detectLanguage = (
+  text: string
+): "russian" | "kazakh" | "unknown" => {
+  // Проверка на казахские специфические символы
+  if (/[әіңғүұқөһ]/i.test(text)) {
+    return "kazakh";
+  }
+  // Проверка на русский язык (кириллица без казахских символов)
+  else if (/[а-яА-Я]/.test(text)) {
+    return "russian";
+  }
+  return "unknown";
+};
+
 export const generateExcelFromCorrectedData = (
   correctedData: PreviewQuestion[],
   originalFileName: string
 ): void => {
   const outputRows: AnswerRow[] = [];
 
-  correctedData.forEach((questionData, index) => {
+  // Отфильтруем вопросы - берем только вопросы указанного языка или все, если язык не указан
+  // Для общего отчета (ALL) берем все вопросы
+  let dataToProcess = [...correctedData];
+
+  // Сначала сгруппируем вопросы по языку для отчетов
+  if (originalFileName.endsWith("_RU")) {
+    dataToProcess = dataToProcess.filter((q) => q.language === "russian");
+  } else if (originalFileName.endsWith("_KZ")) {
+    dataToProcess = dataToProcess.filter((q) => q.language === "kazakh");
+  }
+
+  dataToProcess.forEach((questionData, index) => {
     if (index > 0) {
       outputRows.push({
         A: "",
@@ -236,15 +276,35 @@ export const generateExcelFromCorrectedData = (
       });
     }
 
-    // Строка с вопросом
+    // Строка с вопросом и языком (если определен)
+    const languageLabels = {
+      russian: "[RU]",
+      kazakh: "[KZ]",
+      unknown: "",
+    };
+
+    const languagePrefix = questionData.language
+      ? languageLabels[questionData.language] + " "
+      : "";
+
+    // Добавляем индикатор объединения
+    const combinedSuffix =
+      questionData.combinedWith && questionData.combinedWith.length > 0
+        ? ` [Объединен с ${questionData.combinedWith.length} вопр.]`
+        : "";
+
     outputRows.push({
-      A: questionData.question,
+      A: languagePrefix + questionData.question + combinedSuffix,
       B: "Кол-во",
       C: "Проценты",
     });
 
-    // Строки вариантов ответа
-    questionData.answers.forEach((answer) => {
+    // Строки вариантов ответа - сортируем по количеству ответов
+    const sortedAnswers = [...questionData.answers].sort(
+      (a, b) => b.count - a.count
+    );
+
+    sortedAnswers.forEach((answer) => {
       outputRows.push({
         A: answer.text,
         B: answer.count,
@@ -265,6 +325,7 @@ export const generateExcelFromCorrectedData = (
     skipHeader: true,
   });
 
+  // Устанавливаем ширину столбцов
   newSheet["!cols"] = [
     { wch: 60 }, // Колонка с вопросом или ответом
     { wch: 10 }, // Колонка с кол-вом
@@ -285,7 +346,7 @@ export const generateExcelFromCorrectedData = (
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `${originalFileName}_ANALYZED.xlsx`;
+  link.download = `${originalFileName}.xlsx`;
   link.click();
   URL.revokeObjectURL(url);
 };

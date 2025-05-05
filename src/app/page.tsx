@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useState } from "react";
 import {
   Card,
@@ -55,6 +54,11 @@ const SurveyProcessor = () => {
     setPreviewData(null);
   };
 
+  // Обновленное описание приложения с упоминанием новой функциональности
+  const getAppDescription = () => {
+    return "Загрузите файл Excel с ответами из Google Forms для создания сводного отчета с распределением ответов, процентами и объединением вопросов на разных языках.";
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4">
       <div className="max-w-4xl mx-auto space-y-8">
@@ -68,11 +72,13 @@ const SurveyProcessor = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileSpreadsheet className="h-6 w-6" />
-                Проверка и редактирование вариантов ответов
+                {/* Обновленный заголовок */}
+                Обработка данных опроса
               </CardTitle>
               <CardDescription>
-                Исправьте автоматически определенные варианты и добавьте
-                отсутствующие перед получением отформатированного файла.
+                Объедините похожие вопросы, исправьте автоматически определенные
+                варианты и добавьте отсутствующие перед получением
+                отформатированного файла.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -90,13 +96,25 @@ const SurveyProcessor = () => {
                 <FileSpreadsheet className="h-6 w-6" />
                 Загрузите Данные Опроса
               </CardTitle>
-              <CardDescription>
-                Загрузите файл Excel с ответами из Google Forms для создания
-                сводного отчета с распределением ответов и процентами.
-              </CardDescription>
+              <CardDescription>{getAppDescription()}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <Instructions />
+              {/* Обновленные инструкции с упоминанием новой функциональности */}
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-blue-900 mb-2">
+                  Как это работает:
+                </h3>
+                <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+                  <li>Экспортируйте ответы из Google Forms в файл Excel</li>
+                  <li>Перетащите файл сюда или нажмите для загрузки</li>
+                  <li>
+                    Объедините вопросы на разных языках (при необходимости)
+                  </li>
+                  <li>Отредактируйте и проверьте ответы</li>
+                  <li>Получите обработанную сводку с распределением ответов</li>
+                  <li>Система поддерживает вопросы с множественным выбором</li>
+                </ol>
+              </div>
               <FileUploadArea
                 isDragging={isDragging}
                 isProcessing={isProcessing}

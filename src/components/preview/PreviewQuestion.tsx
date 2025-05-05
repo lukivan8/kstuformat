@@ -1,5 +1,9 @@
-import React, { useState } from "react";
-import { PreviewQuestion as PreviewQuestionType } from "@/processFile";
+import React, { useState, useEffect } from "react";
+import {
+  PreviewAnswer,
+  PreviewQuestion as PreviewQuestionType,
+  QuestionWithLanguage,
+} from "@/processFile";
 import {
   Plus,
   Save,
@@ -10,22 +14,29 @@ import {
   AlertCircle,
   FileSpreadsheet,
   ArrowLeft,
+  Link2,
+  Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import LanguageBadge from "./LanguageBadge";
 
 interface PreviewQuestionProps {
   data: PreviewQuestionType;
   index: number;
   onQuestionUpdate: (index: number, updatedData: PreviewQuestionType) => void;
+  onCombineClick: (questionIndex: number) => void;
+  onRemoveCombines: (questionIndex: number) => void;
 }
 
 const PreviewQuestion: React.FC<PreviewQuestionProps> = ({
   data,
   index,
   onQuestionUpdate,
+  onCombineClick,
+  onRemoveCombines,
 }) => {
   const [editingAnswerIndex, setEditingAnswerIndex] = useState<number | null>(
     null
@@ -34,6 +45,27 @@ const PreviewQuestion: React.FC<PreviewQuestionProps> = ({
   const [newAnswerValue, setNewAnswerValue] = useState("");
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [dismissedGroups, setDismissedGroups] = useState<string[]>([]);
+  const [combinedInfoOpen, setCombinedInfoOpen] = useState(false);
+
+  // Получаем расширенные данные вопроса
+  const questionData = data as QuestionWithLanguage;
+  const language = questionData.language || "unknown";
+  const isCombined =
+    questionData.combinedWith && questionData.combinedWith.length > 0;
+
+  // Эффект для скрытия информации о комбинированных вопросах при клике вне
+  useEffect(() => {
+    if (!combinedInfoOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      setCombinedInfoOpen(false);
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [combinedInfoOpen]);
 
   const getGroupId = (group: typeof data.answers): string => {
     const count = group[0].count;
@@ -194,14 +226,115 @@ const PreviewQuestion: React.FC<PreviewQuestionProps> = ({
     setIsAddingNew(false);
   };
 
+  // Обработка изменения языка
+  const handleLanguageChange = (newLanguage: Language) => {
+    onQuestionUpdate(index, {
+      ...data,
+      language: newLanguage,
+    } as QuestionWithLanguage);
+  };
+
   return (
     <Card className="mb-6">
       <CardHeader>
-        <CardTitle className="text-lg font-medium">
-          <p>{data.question}</p>
-          <Badge className="bg-blue-100 text-blue-800">
-            {data.answers.length} вариантов
-          </Badge>
+        <CardTitle className="text-lg font-medium flex items-start justify-between">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              {language !== "unknown" && (
+                <div
+                  className={`w-2 h-2 rounded-full ${
+                    language === "russian" ? "bg-blue-500" : "bg-green-500"
+                  }`}
+                />
+              )}
+              <p>{data.question}</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Badge className="bg-blue-100 text-blue-800">
+                {data.answers.length} вариантов
+              </Badge>
+              <LanguageBadge
+                language={language}
+                onChange={handleLanguageChange}
+              />
+
+              {/* Индикатор объединенных вопросов */}
+              {isCombined && (
+                <div className="flex items-center gap-1">
+                  <Badge
+                    className="bg-purple-100 text-purple-800 border border-purple-200 flex items-center gap-1 cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCombinedInfoOpen(!combinedInfoOpen);
+                    }}
+                  >
+                    <Link2 className="h-3 w-3" />
+                    Объединен с {questionData.combinedWith?.length} вопр.
+                  </Badge>
+                </div>
+              )}
+            </div>
+
+            {/* Всплывающая информация об объединенных вопросах */}
+            {combinedInfoOpen && questionData.combinedWith && (
+              <div
+                className="mt-2 p-2 bg-gray-50 rounded-md border text-sm"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex justify-between items-center mb-1">
+                  <span className="font-medium">Объединен с вопросами:</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCombinedInfoOpen(false);
+                    }}
+                    className="h-6 w-6 p-0"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+                <ul className="space-y-1 pl-2">
+                  {questionData.combinedWith.map((combined, idx) => (
+                    <li key={idx} className="flex items-start">
+                      <span className="text-xs text-gray-500 mr-1">
+                        {idx + 1}.
+                      </span>
+                      <span className="text-xs line-clamp-2">
+                        {combined.questionText}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onCombineClick(index)}
+              className="h-9"
+              disabled={isCombined}
+            >
+              <Link2 className="h-4 w-4 mr-1" />
+              {isCombined ? "Уже объединен" : "Объединить"}
+            </Button>
+
+            {isCombined && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onRemoveCombines(index)}
+                className="h-8 text-red-600 hover:text-red-700"
+              >
+                <X className="h-3 w-3 mr-1" />
+                Отменить объединение
+              </Button>
+            )}
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent>
