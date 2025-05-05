@@ -3,6 +3,7 @@ import {
   PreviewAnswer,
   PreviewQuestion as PreviewQuestionType,
   QuestionWithLanguage,
+  Language,
 } from "@/processFile";
 import {
   Plus,
@@ -39,7 +40,7 @@ const PreviewQuestion: React.FC<PreviewQuestionProps> = ({
   onRemoveCombines,
 }) => {
   const [editingAnswerIndex, setEditingAnswerIndex] = useState<number | null>(
-    null
+    null,
   );
   const [editValue, setEditValue] = useState("");
   const [newAnswerValue, setNewAnswerValue] = useState("");
@@ -76,13 +77,16 @@ const PreviewQuestion: React.FC<PreviewQuestionProps> = ({
     return `${count}-${texts}`;
   };
 
-  const answersByCount = data.answers.reduce((acc, answer) => {
-    if (!acc[answer.count]) {
-      acc[answer.count] = [];
-    }
-    acc[answer.count].push(answer);
-    return acc;
-  }, {} as Record<number, typeof data.answers>);
+  const answersByCount = data.answers.reduce(
+    (acc, answer) => {
+      if (!acc[answer.count]) {
+        acc[answer.count] = [];
+      }
+      acc[answer.count].push(answer);
+      return acc;
+    },
+    {} as Record<number, typeof data.answers>,
+  );
 
   const allPotentialIssueGroups = Object.entries(answersByCount)
     .filter(([count, group]) => group.length > 1 && parseInt(count) > 0)
@@ -92,8 +96,8 @@ const PreviewQuestion: React.FC<PreviewQuestionProps> = ({
       id: getGroupId(group),
       firstIndex: Math.min(
         ...group.map((a) =>
-          data.answers.findIndex((ans) => ans.text === a.text)
-        )
+          data.answers.findIndex((ans) => ans.text === a.text),
+        ),
       ),
     }))
     .sort((a, b) => a.firstIndex - b.firstIndex);
@@ -151,13 +155,13 @@ const PreviewQuestion: React.FC<PreviewQuestionProps> = ({
     };
 
     const updatedAnswers = data.answers.filter(
-      (_, i) => i !== answerIndex1 && i !== answerIndex2
+      (_, i) => i !== answerIndex1 && i !== answerIndex2,
     );
 
     updatedAnswers.splice(
       Math.min(answerIndex1, answerIndex2),
       0,
-      mergedAnswer
+      mergedAnswer,
     );
 
     onQuestionUpdate(index, {
@@ -193,7 +197,7 @@ const PreviewQuestion: React.FC<PreviewQuestionProps> = ({
     }
 
     const updatedAnswers = data.answers.filter(
-      (_, i) => !sortedIndices.includes(i)
+      (_, i) => !sortedIndices.includes(i),
     );
 
     updatedAnswers.splice(baseIndex, 0, baseAnswer);
@@ -452,7 +456,7 @@ const PreviewQuestion: React.FC<PreviewQuestionProps> = ({
                 onClick={() => {
                   const indices = group
                     .map((a) =>
-                      data.answers.findIndex((ans) => ans.text === a.text)
+                      data.answers.findIndex((ans) => ans.text === a.text),
                     )
                     .sort((a, b) => a - b);
 

@@ -51,7 +51,7 @@ const QuestionCombiner: React.FC<QuestionCombinerProps> = ({
       // Определяем оставшиеся вопросы
       const groupedQuestions = new Set(Object.values(autoGroups).flat());
       setRemainingQuestions(
-        questionTexts.filter((q) => !groupedQuestions.has(q))
+        questionTexts.filter((q) => !groupedQuestions.has(q)),
       );
     } else {
       // Если автоматические группы не найдены, все вопросы остаются несгруппированными
@@ -61,7 +61,7 @@ const QuestionCombiner: React.FC<QuestionCombinerProps> = ({
 
   // Автоматическое группирование похожих вопросов с улучшенными эвристиками
   const autoGroupSimilarQuestions = (
-    questionTexts: string[]
+    questionTexts: string[],
   ): QuestionGroups => {
     const result: QuestionGroups = {};
     const processed = new Set<string>();
@@ -105,6 +105,7 @@ const QuestionCombiner: React.FC<QuestionCombinerProps> = ({
             const numbers1 = q1.normalized.match(/\d+/g) || [];
             const numbers2 = q2.normalized.match(/\d+/g) || [];
             const hasCommonNumbers =
+              // @ts-ignore
               numbers1.some((n) => numbers2.includes(n)) && numbers1.length > 0;
 
             // Проверка на схожую позицию в списке вопросов
@@ -231,7 +232,7 @@ const QuestionCombiner: React.FC<QuestionCombinerProps> = ({
     Object.entries(groups).forEach(([mainQuestion, groupQuestions]) => {
       // Находим соответствующие вопросы в исходных данных
       const questionObjects = questions.filter((q) =>
-        groupQuestions.includes(q.question)
+        groupQuestions.includes(q.question),
       );
 
       if (questionObjects.length === 0) return;
@@ -245,7 +246,7 @@ const QuestionCombiner: React.FC<QuestionCombinerProps> = ({
         { count: number; percentage: string }
       >();
       const totalRespondents = Math.max(
-        ...questionObjects.map((q) => q.totalRespondents)
+        ...questionObjects.map((q) => q.totalRespondents),
       );
 
       // Сначала собираем все ответы
@@ -293,7 +294,7 @@ const QuestionCombiner: React.FC<QuestionCombinerProps> = ({
 
     // Добавляем оставшиеся несгруппированные вопросы
     const remainingQuestionsObjects = questions.filter((q) =>
-      remainingQuestions.includes(q.question)
+      remainingQuestions.includes(q.question),
     );
 
     combinedQuestions.push(...remainingQuestionsObjects);
@@ -354,7 +355,7 @@ const QuestionCombiner: React.FC<QuestionCombinerProps> = ({
                   onClick={() => {
                     // Автоматическое обновление групп на основе более глубокого анализа
                     const autoGroups = autoGroupSimilarQuestions(
-                      questions.map((q) => q.question)
+                      questions.map((q) => q.question),
                     );
 
                     if (Object.keys(autoGroups).length > 0) {
@@ -362,12 +363,12 @@ const QuestionCombiner: React.FC<QuestionCombinerProps> = ({
 
                       // Определяем оставшиеся вопросы
                       const groupedQuestions = new Set(
-                        Object.values(autoGroups).flat()
+                        Object.values(autoGroups).flat(),
                       );
                       setRemainingQuestions(
                         questions
                           .map((q) => q.question)
-                          .filter((q) => !groupedQuestions.has(q))
+                          .filter((q) => !groupedQuestions.has(q)),
                       );
                     }
                   }}
